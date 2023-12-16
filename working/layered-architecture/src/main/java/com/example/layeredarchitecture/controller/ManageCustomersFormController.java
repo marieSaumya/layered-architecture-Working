@@ -1,6 +1,7 @@
 package com.example.layeredarchitecture.controller;
 
 import com.example.layeredarchitecture.dao.CustomerDAOImpl;
+import com.example.layeredarchitecture.dao.CustomerDao;
 import com.example.layeredarchitecture.db.DBConnection;
 import com.example.layeredarchitecture.model.CustomerDTO;
 import com.example.layeredarchitecture.view.tdm.CustomerTM;
@@ -37,6 +38,7 @@ public class ManageCustomersFormController {
     public TextField txtCustomerAddress;
     public TableView<CustomerTM> tblCustomers;
     public JFXButton btnAddNewCustomer;
+    CustomerDao customerDAO = new CustomerDAOImpl();
 
     public void initialize() {
         tblCustomers.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -69,7 +71,6 @@ public class ManageCustomersFormController {
         tblCustomers.getItems().clear();
         /*Get all customers*/
         try {
-            CustomerDAOImpl customerDAO = new CustomerDAOImpl();
            ArrayList<CustomerDTO> allCustomer =  customerDAO.getAllCustomer();
            for (CustomerDTO dto : allCustomer){
                tblCustomers.getItems().add(new CustomerTM(dto.getId(), dto.getName(),dto.getAddress()));
@@ -146,7 +147,6 @@ public class ManageCustomersFormController {
 
 
              CustomerDTO dto = new CustomerDTO(id,name,address);
-                CustomerDAOImpl customerDAO = new CustomerDAOImpl();
                 customerDAO.saveCustomer(dto);
                 tblCustomers.getItems().add(new CustomerTM(id, name, address));
             } catch (SQLException e) {
@@ -164,7 +164,6 @@ public class ManageCustomersFormController {
                 }
 
                 CustomerDTO dto = new CustomerDTO(id,name,address);
-                CustomerDAOImpl customerDAO = new CustomerDAOImpl();
                 customerDAO.updateCustomer(dto);
             } catch (SQLException e) {
                 new Alert(Alert.AlertType.ERROR, "Failed to update the customer " + id + e.getMessage()).show();
@@ -183,12 +182,7 @@ public class ManageCustomersFormController {
 
 
     boolean existCustomer(String id) throws SQLException, ClassNotFoundException {
-      /*  Connection connection = DBConnection.getDbConnection().getConnection();
-        PreparedStatement pstm = connection.prepareStatement("SELECT id FROM Customer WHERE id=?");
-        pstm.setString(1, id);
-        return pstm.executeQuery().next();
-        */
-       CustomerDAOImpl customerDAO = new CustomerDAOImpl();
+
        return customerDAO.isCustomerExit(id);
     }
 
@@ -200,8 +194,6 @@ public class ManageCustomersFormController {
             if (!existCustomer(id)) {
                 new Alert(Alert.AlertType.ERROR, "There is no such customer associated with the id " + id).show();
             }
-
-            CustomerDAOImpl customerDAO = new CustomerDAOImpl();
 
             boolean deleted = customerDAO.deleteCustomer(id);
             if (deleted) {
@@ -219,16 +211,7 @@ public class ManageCustomersFormController {
     private String generateNewId() {
         String id = null;
         try {
-           /* Connection connection = DBConnection.getDbConnection().getConnection();
-            ResultSet rst = connection.createStatement().executeQuery("SELECT id FROM Customer ORDER BY id DESC LIMIT 1;");
-            if (rst.next()) {
-                String id = rst.getString("id");
-                int newCustomerId = Integer.parseInt(id.replace("C00-", "")) + 1;
-                return String.format("C00-%03d", newCustomerId);
-            } else {
-                return "C00-001";
-            }*/
-            CustomerDAOImpl customerDAO = new CustomerDAOImpl();
+
              id = customerDAO.getId();
         } catch (SQLException e) {
             new Alert(Alert.AlertType.ERROR, "Failed to generate a new id " + e.getMessage()).show();
@@ -236,14 +219,6 @@ public class ManageCustomersFormController {
             e.printStackTrace();
         }
 
-
-      /*  if (tblCustomers.getItems().isEmpty()) {
-            return "C00-001";
-        } else {
-            String id = getLastCustomerId();
-            int newCustomerId = Integer.parseInt(id.replace("C", "")) + 1;
-            return String.format("C00-%03d", newCustomerId);
-        }*/
         return  id;
 
     }
