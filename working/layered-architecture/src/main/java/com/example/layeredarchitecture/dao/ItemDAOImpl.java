@@ -2,10 +2,12 @@ package com.example.layeredarchitecture.dao;
 
 import com.example.layeredarchitecture.db.DBConnection;
 import com.example.layeredarchitecture.model.ItemDTO;
+import com.example.layeredarchitecture.model.OrderDetailDTO;
 import javafx.scene.control.Alert;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ItemDAOImpl implements ItemDao{
     @Override
@@ -72,5 +74,49 @@ public class ItemDAOImpl implements ItemDao{
             e.printStackTrace();
         }
         return "I00-001";
+    }
+
+    @Override
+    public ItemDTO searchItem(String newItemCode) throws SQLException, ClassNotFoundException {
+        Connection connection = DBConnection.getDbConnection().getConnection();
+        PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Item WHERE code=?");
+        pstm.setString(1, newItemCode + "");
+        ResultSet rst = pstm.executeQuery();
+        rst.next();
+        ItemDTO item = new ItemDTO(newItemCode + "", rst.getString("description"), rst.getBigDecimal("unitPrice"), rst.getInt("qtyOnHand"));
+        return  item;
+    }
+
+    @Override
+    public boolean updateQuantity(List<OrderDetailDTO> orderDetails) throws SQLException, ClassNotFoundException {
+       int count = 0;
+        Connection connection = DBConnection.getDbConnection().getConnection();
+        for (OrderDetailDTO detail : orderDetails){
+            ItemDTO item = findItem(detail.getItemCode());
+            item.setQtyOnHand(item.getQtyOnHand() - detail.getQty());
+            PreparedStatement pstm = connection.prepareStatement("UPDATE Item SET description=?, unitPrice=?, qtyOnHand=? WHERE code=?");
+            pstm.setString(1, item.getDescription());
+            pstm.setBigDecimal(2, item.getUnitPrice());
+            pstm.setInt(3, item.getQtyOnHand());
+            pstm.setString(4, item.getCode());
+            pstm.executeUpdate();
+            count ++;
+        }
+        return count==orderDetails.size();
+    }
+    public ItemDTO findItem(String code) {
+        try {
+            Connection connection = DBConnection.getDbConnection().getConnection();
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Item WHERE code=?");
+            pstm.setString(1, code);
+            ResultSet rst = pstm.executeQuery();
+            rst.next();
+            return new ItemDTO(code, rst.getString("description"), rst.getBigDecimal("unitPrice"), rst.getInt("qtyOnHand"));
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find the Item " + code, e);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
